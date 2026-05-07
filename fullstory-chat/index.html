@@ -8,19 +8,19 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --border: #2e3350;
-    --accent: #6c63ff;
-    --accent2: #ff6584;
-    --text: #e8eaf6;
-    --muted: #7b82a8;
-    --user-bg: #1e2a4a;
-    --assistant-bg: #1a1d27;
-    --tool-bg: #12162b;
-    --tool-border: #2a3060;
-    --success: #4caf82;
+    --bg: #0f0e0c;
+    --surface: #1a1714;
+    --surface2: #26211b;
+    --border: #3a2e22;
+    --accent: #ec7000;
+    --accent2: #ff9a3c;
+    --text: #f5ede4;
+    --muted: #9e8b78;
+    --user-bg: #2a1f12;
+    --assistant-bg: #1a1714;
+    --tool-bg: #130f0a;
+    --tool-border: #3d2e1a;
+    --success: #5cb87a;
     --error: #f44747;
     --radius: 14px;
     --radius-sm: 8px;
@@ -42,12 +42,13 @@
     align-items: center;
     gap: 12px;
     padding: 14px 20px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #1a1714 0%, #2a1a08 100%);
+    border-bottom: 2px solid var(--accent);
     flex-shrink: 0;
   }
   header svg { width: 28px; height: 28px; flex-shrink: 0; }
-  header h1 { font-size: 1rem; font-weight: 600; color: var(--text); }
+  header h1 { font-size: 1rem; font-weight: 700; color: var(--text); letter-spacing: 0.01em; }
+  header h1 .brand { color: var(--accent); }
   header span { font-size: 0.75rem; color: var(--muted); margin-left: 4px; }
   .status-dot {
     width: 8px; height: 8px; border-radius: 50%;
@@ -87,7 +88,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
   }
-  .msg.user .avatar { background: var(--accent); color: white; }
+  .msg.user .avatar { background: linear-gradient(135deg, #ec7000, #ff9a3c); color: white; box-shadow: 0 2px 8px rgba(236,112,0,0.35); }
   .msg.assistant .avatar { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); }
 
   .bubble {
@@ -100,7 +101,7 @@
   }
   .msg.user .bubble {
     background: var(--user-bg);
-    border: 1px solid #2a3a6a;
+    border: 1px solid #4a2e10;
     border-top-right-radius: 4px;
   }
   .msg.assistant .bubble {
@@ -112,7 +113,7 @@
   /* markdown-ish */
   .bubble p { margin-bottom: 0.6em; }
   .bubble p:last-child { margin-bottom: 0; }
-  .bubble strong { color: #c5cae9; }
+  .bubble strong { color: #f5c89a; }
   .bubble code {
     background: var(--tool-bg);
     border: 1px solid var(--tool-border);
@@ -133,13 +134,13 @@
   .bubble ul, .bubble ol { padding-left: 20px; margin: 6px 0; }
   .bubble li { margin-bottom: 4px; }
   .bubble h1, .bubble h2, .bubble h3 {
-    color: #c5cae9; font-weight: 600;
+    color: var(--accent2); font-weight: 600;
     margin: 12px 0 6px;
   }
   .bubble h2 { font-size: 1rem; }
   .bubble h3 { font-size: 0.9rem; }
   .bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.85em; }
-  .bubble th { background: var(--surface2); padding: 6px 10px; text-align: left; border: 1px solid var(--border); }
+  .bubble th { background: #2a1f12; padding: 6px 10px; text-align: left; border: 1px solid var(--border); color: var(--accent2); }
   .bubble td { padding: 5px 10px; border: 1px solid var(--border); }
   .bubble a { color: var(--accent); text-decoration: none; }
   .bubble a:hover { text-decoration: underline; }
@@ -217,22 +218,23 @@
     overflow-y: auto;
     transition: border-color 0.2s;
   }
-  #user-input:focus { border-color: var(--accent); }
+  #user-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(236,112,0,0.15); }
   #user-input::placeholder { color: var(--muted); }
 
   #send-btn {
     width: 44px; height: 44px;
     border-radius: 50%;
-    background: var(--accent);
+    background: linear-gradient(135deg, #ec7000, #ff9a3c);
     border: none;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    transition: background 0.2s, transform 0.1s;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 2px 10px rgba(236,112,0,0.4);
   }
-  #send-btn:hover { background: #7c74ff; }
+  #send-btn:hover { opacity: 0.88; box-shadow: 0 4px 16px rgba(236,112,0,0.5); }
   #send-btn:active { transform: scale(0.93); }
-  #send-btn:disabled { background: var(--border); cursor: not-allowed; }
+  #send-btn:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; }
   #send-btn svg { width: 18px; height: 18px; }
 
   .hint { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 8px; }
@@ -265,33 +267,27 @@
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s;
   }
-  .suggestion:hover { border-color: var(--accent); color: var(--text); }
+  .suggestion:hover { border-color: var(--accent); color: var(--accent2); background: #2a1a08; }
 </style>
 </head>
 <body>
 
 <header>
-  <svg viewBox="0 0 32 32" fill="none">
-    <rect width="32" height="32" rx="8" fill="#6c63ff"/>
-    <path d="M8 10h16M8 16h10M8 22h13" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-  </svg>
+  <img src="https://www.itau.com.br/media/dam/m/59ca6000bfbf59d6/original/ITAU_LOGO_HEX_48X48.png" alt="Itaú" style="width:32px;height:32px;border-radius:6px;flex-shrink:0;">
   <div>
-    <h1>FullStory Assistant <span>powered by Claude</span></h1>
+    <h1>FullStory <span class="brand">Itaú</span> Analytics</h1>
   </div>
   <div class="status-dot" title="Connected to FullStory MCP"></div>
 </header>
 
 <div id="messages">
   <div id="welcome">
-    <svg viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="30" fill="#1a1d27" stroke="#2e3350" stroke-width="2"/>
-      <path d="M16 22h32M16 32h20M16 42h26" stroke="#6c63ff" stroke-width="3" stroke-linecap="round"/>
-    </svg>
-    <h2>FullStory Analytics</h2>
-    <p>Ask me anything about your users — I'll build segments, compute metrics, and investigate sessions in real time.</p>
+  <img src="https://www.itau.com.br/media/dam/m/59ca6000bfbf59d6/original/ITAU_LOGO_HEX_48X48.png" alt="Itaú" style="width:56px;height:56px;border-radius:12px;opacity:0.9;">
+    <h2>FullStory Itaú Analytics</h2>
+    <p>Pergunte sobre seus usuários — construo segmentos, calculo métricas e investigo sessões em tempo real.</p>
     <div class="suggestions">
       <div class="suggestion" onclick="send(this.textContent)">Quais páginas têm mais rage clicks?</div>
-      <div class="suggestion" onclick="send(this.textContent)">Analisa as últimas 5 sessões do segmento mg7gJOHhGhLs</div>
+      <div class="suggestion" onclick="send(this.textContent)">Quais são os segmentos com maior taxa de abandono?</div>
       <div class="suggestion" onclick="send(this.textContent)">Quantos usuários únicos nos últimos 30 dias?</div>
       <div class="suggestion" onclick="send(this.textContent)">Cria uma métrica de conversão do fluxo de transferência Pix</div>
     </div>
@@ -406,8 +402,8 @@ function md(text) {
     .replace(/^---+$/gm, '<hr>')
     // links
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
-    // bare URLs
-    .replace(/(https?:\/\/[^\s<>"]+)/g, '<a href="$1" target="_blank">$1</a>')
+    // bare URLs (skip URLs already inside an href attribute)
+    .replace(/(?<!href=")(https?:\/\/[^\s<>"]+)/g, '<a href="$1" target="_blank">$1</a>')
     // lists
     .replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>')
     .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
