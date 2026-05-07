@@ -1,0 +1,4 @@
+python-embed/
+__pycache__/
+*.pyc
+.claude/
