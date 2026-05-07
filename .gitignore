@@ -1,4 +1,7 @@
-python-embed/
 __pycache__/
 *.pyc
-.claude/
+*.pyo
+.env
+.env.local
+python-embed/
+*.log
