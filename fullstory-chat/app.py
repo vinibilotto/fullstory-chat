@@ -45,6 +45,9 @@ def _save_creds(creds: dict):
         json.dump(creds, f, indent=2)
 
 
+_CLAUDE_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
+
+
 def _find_fs_entry(creds: dict) -> tuple[str, dict]:
     for key, val in creds.get("mcpOAuth", {}).items():
         if "fullstory" in key.lower():
@@ -52,36 +55,71 @@ def _find_fs_entry(creds: dict) -> tuple[str, dict]:
     raise ValueError("FullStory OAuth token not found in ~/.claude/.credentials.json")
 
 
-def _get_token() -> str:
-    creds = _load_creds()
-    key, entry = _find_fs_entry(creds)
-    expires_at = entry.get("expiresAt", 0) / 1000
-    if expires_at < time.time() + 300:
-        return _refresh_token(creds, key, entry)
-    return entry["accessToken"]
-
-
-def _refresh_token(creds: dict, key: str, entry: dict) -> str:
+def _oauth_refresh(url: str, refresh_token: str, client_id: str) -> dict:
     import urllib.request, urllib.parse
     body = urllib.parse.urlencode({
         "grant_type": "refresh_token",
-        "refresh_token": entry["refreshToken"],
-        "client_id": entry["clientId"],
+        "refresh_token": refresh_token,
+        "client_id": client_id,
     }).encode()
     req = urllib.request.Request(
-        "https://auth.fullstory.com/oauth/token",
-        data=body,
+        url, data=body,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     with urllib.request.urlopen(req, timeout=15) as resp:
-        new = json.loads(resp.read())
-    entry["accessToken"] = new["access_token"]
-    entry["expiresAt"] = int((time.time() + new.get("expires_in", 3600)) * 1000)
-    if "refresh_token" in new:
-        entry["refreshToken"] = new["refresh_token"]
-    creds["mcpOAuth"][key] = entry
-    _save_creds(creds)
-    return entry["accessToken"]
+        return json.loads(resp.read())
+
+
+def _get_token() -> str:
+    creds = _load_creds()
+    key, entry = _find_fs_entry(creds)
+    now = time.time()
+    expires_at = entry.get("expiresAt", 0) / 1000
+    # Refresh proactively 5 minutes before expiry
+    if expires_at > now + 300:
+        return entry["accessToken"]
+    try:
+        new = _oauth_refresh(
+            "https://auth.fullstory.com/oauth/token",
+            entry["refreshToken"],
+            entry["clientId"],
+        )
+        entry["accessToken"] = new["access_token"]
+        entry["expiresAt"] = int((now + new.get("expires_in", 3600)) * 1000)
+        if "refresh_token" in new:
+            entry["refreshToken"] = new["refresh_token"]
+        creds["mcpOAuth"][key] = entry
+        _save_creds(creds)
+        return entry["accessToken"]
+    except Exception:
+        # Token may still work; let the API call fail with a proper error if not
+        return entry["accessToken"]
+
+
+def _get_claude_token() -> str:
+    creds = _load_creds()
+    entry = creds.get("claudeAiOauth", {})
+    now = time.time()
+    expires_at = entry.get("expiresAt", 0) / 1000
+    # Refresh proactively 5 minutes before expiry
+    if expires_at > now + 300:
+        return entry["accessToken"]
+    try:
+        new = _oauth_refresh(
+            "https://api.anthropic.com/v1/oauth/token",
+            entry["refreshToken"],
+            _CLAUDE_CLIENT_ID,
+        )
+        entry["accessToken"] = new["access_token"]
+        entry["expiresAt"] = int((now + new.get("expires_in", 28800)) * 1000)
+        if "refresh_token" in new:
+            entry["refreshToken"] = new["refresh_token"]
+        creds["claudeAiOauth"] = entry
+        _save_creds(creds)
+        return entry["accessToken"]
+    except Exception:
+        # Token may still work; let the API call fail with a proper error if not
+        return entry["accessToken"]
 
 
 # ── MCP helpers ────────────────────────────────────────────────────────────────
@@ -138,13 +176,7 @@ def _get_claude_client() -> anthropic.Anthropic:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if api_key:
         return anthropic.Anthropic(api_key=api_key)
-    # Fall back to Claude.ai OAuth token from Claude Code credentials
-    creds = _load_creds()
-    entry = creds.get("claudeAiOauth", {})
-    token = entry.get("accessToken")
-    if not token:
-        raise RuntimeError("No ANTHROPIC_API_KEY and no claudeAiOauth token found in ~/.claude/.credentials.json")
-    # OAuth tokens require Authorization: Bearer, not x-api-key
+    token = _get_claude_token()
     class _OAuthAuth(httpx.Auth):
         def auth_flow(self, request):
             request.headers["Authorization"] = f"Bearer {token}"
@@ -157,10 +189,13 @@ def _get_claude_client() -> anthropic.Anthropic:
 async def chat(req: ChatRequest):
     try:
         client = _get_claude_client()
-    except RuntimeError as e:
-        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(400, f"Claude auth error: {e}")
 
-    tools = await get_tools()
+    try:
+        tools = await get_tools()
+    except Exception as e:
+        raise HTTPException(502, f"FullStory MCP error: {e}")
 
     async def stream() -> str:
         messages = list(req.messages)
